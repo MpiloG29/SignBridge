@@ -1,7 +1,21 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+from datetime import datetime, timezone
 
-app = FastAPI(title="SignBridge API", version="0.1.0")
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+app = FastAPI(
+    title="SignBridge API",
+    version="0.2.0",
+    description="Backend health and starter inference endpoints for SignBridge.",
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class SignPrediction(BaseModel):
@@ -9,9 +23,23 @@ class SignPrediction(BaseModel):
     confidence: float
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {
+        "service": "SignBridge API",
+        "status": "running",
+        "docs": "/docs",
+    }
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "checked_at": datetime.now(timezone.utc).isoformat()}
+
+
+@app.get("/ready")
+def readiness() -> dict[str, str]:
+    return {"ready": "true"}
 
 
 @app.post("/predict", response_model=SignPrediction)
